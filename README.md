@@ -1,36 +1,208 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# JARVIS 2.0
 
-## Getting Started
+A cinematic, futuristic AI command system built with Next.js, Tailwind CSS, Framer Motion, OpenAI, and MongoDB.
 
-First, run the development server:
+It is designed to feel like a personal AI operating system, not a basic chatbot.
+
+## Core Features
+
+- Real-time streaming chat responses
+- Multi-turn conversation memory
+- Voice input (Speech-to-Text) + voice output (Text-to-Speech)
+- Optional wake word mode: `Hey JARVIS`
+- Smart dashboard: time, weather, live client system stats
+- File upload + context-aware code/file analysis
+- Productivity suite: tasks, notes, reminders
+- Internet knowledge mode (live snippets via web retrieval)
+- Personal training system with:
+  - Short-term conversational context
+  - Long-term memory in MongoDB
+  - Optional semantic memory (embeddings)
+- Command mode:
+  - `/remember <text>`
+  - `/forget <text>`
+  - `/update <field>: <value>`
+  - `/clear memory`
+  - `/summarize <text>`
+- Training modes:
+  - Passive Mode (auto-learning)
+  - Manual Mode (learns via commands)
+  - Focus Mode (high-signal responses)
+- Theme switcher: `JARVIS` / `FRIDAY`
+- Keyboard shortcuts
+- User-owned memory with export and delete controls
+
+## UI Component Design
+
+### 1) Left Control Panel
+
+- Agent selector: General / Coder / Study / Research
+- Tone selector: Professional / Friendly / Technical
+- Training mode selector
+- Toggles:
+  - Knowledge mode
+  - Auto-learning
+  - Wake word
+  - Voice output
+- Theme switcher: JARVIS / FRIDAY
+- Keyboard shortcuts reference
+
+### 2) Center Chat Core
+
+- Animated message timeline
+- Markdown-enabled assistant output
+- Streaming token rendering + typing cursor
+- AI thinking indicator
+- Quick action command chips
+- Voice waveform when listening
+- File upload chips + context injection
+
+### 3) Right Intelligence Rail
+
+- Dashboard widgets (clock/weather/system metrics)
+- Memory & training panel (view/edit/delete/clear)
+- Productivity panel (tasks/notes/reminders)
+- AI insight cards (weak subjects/emotions/study patterns)
+- Privacy actions (export/delete user data)
+
+## Folder Structure
+
+```txt
+src/
+  app/
+    api/
+      chat/route.ts
+      export/route.ts
+      history/route.ts
+      memory/route.ts
+      memory/[id]/route.ts
+      productivity/route.ts
+      settings/route.ts
+    globals.css
+    layout.tsx
+    page.tsx
+  components/
+    jarvis-console.tsx
+    message-bubble.tsx
+    typing-indicator.tsx
+    voice-waveform.tsx
+  lib/
+    auto-learning.ts
+    commands.ts
+    constants.ts
+    db.ts
+    memory.ts
+    openai.ts
+    prompt.ts
+    utils.ts
+    web-search.ts
+  models/
+    Conversation.ts
+    Memory.ts
+    ProductivityItem.ts
+    UserProfile.ts
+  types/
+    index.ts
+```
+
+## Setup Instructions
+
+## 1) Install
+
+```bash
+npm install
+```
+
+## 2) Configure environment
+
+```bash
+cp .env.example .env.local
+```
+
+Fill these values:
+
+- `OPENAI_API_KEY` (required for AI responses)
+- `MONGODB_URI` (required for persistent memory/training/history/productivity)
+- Optional:
+  - `OPENAI_MODEL`
+  - `ENABLE_SEMANTIC_MEMORY`
+  - `OPENAI_EMBEDDING_MODEL`
+
+## 3) Run
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open: `http://localhost:3000`
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Personal Training System Details
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Memory layers
 
-## Learn More
+- Short-term: recent multi-turn messages included in each prompt
+- Long-term: structured memory documents in MongoDB
+- Semantic memory: optional embedding-based retrieval when enabled
 
-To learn more about Next.js, take a look at the following resources:
+### Learning behavior
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- Passive Mode: auto-extracts signals (e.g. weak subjects, preferences, emotional signals)
+- Manual Mode: learns only through slash commands
+- Focus Mode: prioritizes concise, high-signal responses
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Retrieval flow
 
-## Deploy on Vercel
+Before each response:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+1. Relevant memories are ranked and fetched
+2. Knowledge snippets are fetched if knowledge mode is ON
+3. Prompt is dynamically assembled with memory + context + selected agent/tone/mode
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Deployment Guide (GitHub + Vercel)
+
+## 1) Push to GitHub
+
+```bash
+git init
+git add .
+git commit -m "feat: jarvis 2.0 adaptive ai system"
+git branch -M main
+git remote add origin <your-github-repo-url>
+git push -u origin main
+```
+
+## 2) Deploy on Vercel
+
+1. Import the GitHub repository in Vercel
+2. Framework preset: `Next.js`
+3. Add environment variables in Vercel project settings:
+   - `OPENAI_API_KEY`
+   - `MONGODB_URI`
+   - `OPENAI_MODEL` (optional)
+   - `ENABLE_SEMANTIC_MEMORY` (optional)
+   - `OPENAI_EMBEDDING_MODEL` (optional)
+4. Deploy
+
+No special build command is required.
+
+## Browser Notes
+
+- Voice input/output depends on browser Web Speech API support (best in Chromium browsers)
+- Wake word mode uses transcript matching (`Hey JARVIS ...`) rather than continuous background hotword detection
+
+## Command Examples
+
+- `/remember I study best at night`
+- `/update weak_subject: Organic Chemistry`
+- `/forget Organic Chemistry`
+- `/clear memory`
+- `/summarize <paste long text>`
+
+## Tech Stack
+
+- Frontend: Next.js App Router, React, Tailwind CSS, Framer Motion
+- Backend: Next.js API routes (serverless-ready)
+- AI: OpenAI Chat Completions streaming
+- Database: MongoDB + Mongoose
+- Voice: Web Speech API (STT + TTS)
+# JARVIS-2.0
