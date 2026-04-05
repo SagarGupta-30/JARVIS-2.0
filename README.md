@@ -175,15 +175,49 @@ git push -u origin main
 
 1. Import the GitHub repository in Vercel
 2. Framework preset: `Next.js`
-3. Add environment variables in Vercel project settings:
+3. Set Node version to `20.x` in Vercel Project Settings -> General -> Node.js Version
+4. Add environment variables in Vercel project settings:
    - `OPENAI_API_KEY`
    - `MONGODB_URI`
    - `OPENAI_MODEL` (optional)
    - `ENABLE_SEMANTIC_MEMORY` (optional)
    - `OPENAI_EMBEDDING_MODEL` (optional)
-4. Deploy
+5. Deploy
 
 No special build command is required.
+
+### CLI Deployment (Optional)
+
+```bash
+npx vercel login
+npx vercel link
+npx vercel env add OPENAI_API_KEY production
+npx vercel env add MONGODB_URI production
+npx vercel env add OPENAI_MODEL production
+npx vercel --prod
+```
+
+### Post-Deploy Verification
+
+After deploy, open:
+
+- `https://<your-project>.vercel.app/api/health`
+
+Expected:
+
+- `OPENAI_API_KEY: "set"`
+- `MONGODB_URI: "set"`
+
+If either is `"missing"`, add env vars in Vercel and redeploy.
+
+### Common Vercel Failures
+
+- `No Project Settings found locally`:
+  - Run `npx vercel pull --yes` (or use dashboard deploy).
+- `Incorrect API key provided`:
+  - Replace `OPENAI_API_KEY` in Vercel with a real key and redeploy.
+- Chat timing out:
+  - `chat` route is already configured with `maxDuration = 60` for streaming.
 
 ## Browser Notes
 
@@ -205,4 +239,3 @@ No special build command is required.
 - AI: OpenAI Chat Completions streaming
 - Database: MongoDB + Mongoose
 - Voice: Web Speech API (STT + TTS)
-# JARVIS-2.0
