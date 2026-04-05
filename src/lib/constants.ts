@@ -1,4 +1,11 @@
-import type { AgentMode, MemoryKind, ResponseTone, TrainingMode } from "@/types";
+import type {
+  AgentMode,
+  MemoryKind,
+  ResponseTone,
+  TrainingMode,
+  VoiceGender,
+  VoiceLanguage,
+} from "@/types";
 
 export const DEFAULT_USER_ID = "local-operator";
 
@@ -16,6 +23,14 @@ export const TONE_OPTIONS: ResponseTone[] = [
 ];
 
 export const TRAINING_MODES: TrainingMode[] = ["passive", "manual", "focus"];
+
+export const VOICE_GENDER_OPTIONS: VoiceGender[] = ["female", "male", "auto"];
+
+export const VOICE_LANGUAGE_OPTIONS: VoiceLanguage[] = [
+  "bilingual",
+  "en",
+  "hi",
+];
 
 export const MEMORY_KINDS: MemoryKind[] = [
   "preference",

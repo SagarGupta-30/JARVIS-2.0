@@ -8,6 +8,8 @@ import type {
   ResponseTone,
   TrainingMode,
   UserSettings,
+  VoiceGender,
+  VoiceLanguage,
 } from "@/types";
 
 function toMemoryItem(doc: MemoryDocument & { _id?: unknown }) {
@@ -32,6 +34,8 @@ function toSettings(doc: Awaited<ReturnType<typeof UserProfileModel.findOne>>) {
       responseTone: doc.preferences.responseTone,
       theme: doc.preferences.theme,
       wakeWordEnabled: doc.preferences.wakeWordEnabled,
+      voiceGender: doc.preferences.voiceGender ?? "female",
+      voiceLanguage: doc.preferences.voiceLanguage ?? "bilingual",
     },
     training: {
       autoLearning: doc.training.autoLearning,
@@ -53,6 +57,8 @@ export async function ensureUserProfile(userId: string) {
           responseTone: "professional",
           theme: "jarvis",
           wakeWordEnabled: false,
+          voiceGender: "female",
+          voiceLanguage: "bilingual",
         },
         training: {
           autoLearning: true,
@@ -89,6 +95,8 @@ export async function updateUserSettings(
       responseTone?: ResponseTone;
       theme?: "jarvis" | "friday";
       wakeWordEnabled?: boolean;
+      voiceGender?: VoiceGender;
+      voiceLanguage?: VoiceLanguage;
     };
   },
 ) {
@@ -122,6 +130,12 @@ export async function updateUserSettings(
     }
     if (typeof updates.preferences.wakeWordEnabled === "boolean") {
       updateDoc["preferences.wakeWordEnabled"] = updates.preferences.wakeWordEnabled;
+    }
+    if (updates.preferences.voiceGender) {
+      updateDoc["preferences.voiceGender"] = updates.preferences.voiceGender;
+    }
+    if (updates.preferences.voiceLanguage) {
+      updateDoc["preferences.voiceLanguage"] = updates.preferences.voiceLanguage;
     }
   }
 

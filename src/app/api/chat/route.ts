@@ -346,6 +346,8 @@ export async function POST(request: NextRequest) {
       responseTone: body.preferences?.responseTone ?? "professional",
       theme: body.preferences?.theme ?? "jarvis",
       wakeWordEnabled: body.preferences?.wakeWordEnabled ?? false,
+      voiceGender: body.preferences?.voiceGender ?? "female",
+      voiceLanguage: body.preferences?.voiceLanguage ?? "bilingual",
     },
     training: {
       autoLearning: body.training?.autoLearning ?? true,

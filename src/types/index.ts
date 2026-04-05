@@ -6,6 +6,10 @@ export type ResponseTone = "professional" | "friendly" | "technical";
 
 export type TrainingMode = "passive" | "manual" | "focus";
 
+export type VoiceGender = "auto" | "female" | "male";
+
+export type VoiceLanguage = "en" | "hi" | "bilingual";
+
 export type MemoryKind =
   | "preference"
   | "goal"
@@ -51,6 +55,8 @@ export interface UserSettings {
     responseTone: ResponseTone;
     theme: "jarvis" | "friday";
     wakeWordEnabled: boolean;
+    voiceGender: VoiceGender;
+    voiceLanguage: VoiceLanguage;
   };
   training: {
     autoLearning: boolean;

@@ -9,6 +9,8 @@ export interface UserProfileDocument {
     responseTone: "professional" | "friendly" | "technical";
     theme: "jarvis" | "friday";
     wakeWordEnabled: boolean;
+    voiceGender: "auto" | "female" | "male";
+    voiceLanguage: "en" | "hi" | "bilingual";
   };
   training: {
     autoLearning: boolean;
@@ -40,6 +42,16 @@ const userProfileSchema = new Schema<UserProfileDocument>(
         default: "jarvis",
       },
       wakeWordEnabled: { type: Boolean, default: false },
+      voiceGender: {
+        type: String,
+        enum: ["auto", "female", "male"],
+        default: "female",
+      },
+      voiceLanguage: {
+        type: String,
+        enum: ["en", "hi", "bilingual"],
+        default: "bilingual",
+      },
     },
     training: {
       autoLearning: { type: Boolean, default: true },

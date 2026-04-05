@@ -43,6 +43,8 @@ export async function PATCH(request: NextRequest) {
         responseTone?: "professional" | "friendly" | "technical";
         theme?: "jarvis" | "friday";
         wakeWordEnabled?: boolean;
+        voiceGender?: "auto" | "female" | "male";
+        voiceLanguage?: "en" | "hi" | "bilingual";
       };
       training?: {
         autoLearning?: boolean;

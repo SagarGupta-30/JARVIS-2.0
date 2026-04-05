@@ -38,7 +38,15 @@ import {
 import { MessageBubble } from "@/components/message-bubble";
 import { TypingIndicator } from "@/components/typing-indicator";
 import { VoiceWaveform } from "@/components/voice-waveform";
-import { AGENT_OPTIONS, DEFAULT_USER_ID, STORAGE_KEYS, TONE_OPTIONS, TRAINING_MODES } from "@/lib/constants";
+import {
+  AGENT_OPTIONS,
+  DEFAULT_USER_ID,
+  STORAGE_KEYS,
+  TONE_OPTIONS,
+  TRAINING_MODES,
+  VOICE_GENDER_OPTIONS,
+  VOICE_LANGUAGE_OPTIONS,
+} from "@/lib/constants";
 import { useHudSfx } from "@/lib/hud-sfx";
 import { createId, formatModeLabel } from "@/lib/utils";
 import type {
@@ -106,12 +114,38 @@ const DEFAULT_SETTINGS: UserSettings = {
     responseTone: "professional",
     theme: "jarvis",
     wakeWordEnabled: false,
+    voiceGender: "female",
+    voiceLanguage: "bilingual",
   },
   training: {
     autoLearning: true,
     mode: "passive",
   },
 };
+
+function normalizeSettings(settings: UserSettings): UserSettings {
+  return {
+    ...settings,
+    preferences: {
+      responseTone:
+        settings.preferences?.responseTone ?? DEFAULT_SETTINGS.preferences.responseTone,
+      theme: settings.preferences?.theme ?? DEFAULT_SETTINGS.preferences.theme,
+      wakeWordEnabled:
+        settings.preferences?.wakeWordEnabled ??
+        DEFAULT_SETTINGS.preferences.wakeWordEnabled,
+      voiceGender:
+        settings.preferences?.voiceGender ?? DEFAULT_SETTINGS.preferences.voiceGender,
+      voiceLanguage:
+        settings.preferences?.voiceLanguage ??
+        DEFAULT_SETTINGS.preferences.voiceLanguage,
+    },
+    training: {
+      autoLearning:
+        settings.training?.autoLearning ?? DEFAULT_SETTINGS.training.autoLearning,
+      mode: settings.training?.mode ?? DEFAULT_SETTINGS.training.mode,
+    },
+  };
+}
 
 const WELCOME_MESSAGE: ChatMessage = {
   id: "welcome",
@@ -133,6 +167,118 @@ function getSpeechRecognitionCtor() {
   }
 
   return (window.SpeechRecognition || window.webkitSpeechRecognition) ?? null;
+}
+
+const FEMALE_VOICE_HINTS = [
+  "female",
+  "woman",
+  "zira",
+  "aria",
+  "siri",
+  "priya",
+  "raveena",
+  "aasha",
+  "heera",
+  "alloy-f",
+];
+
+const MALE_VOICE_HINTS = [
+  "male",
+  "man",
+  "david",
+  "mark",
+  "alex",
+  "guy",
+  "prabhat",
+  "raj",
+  "alloy-m",
+];
+
+function getVoiceOutputLanguage(
+  text: string,
+  mode: UserSettings["preferences"]["voiceLanguage"],
+) {
+  if (mode === "hi") {
+    return "hi";
+  }
+
+  if (mode === "en") {
+    return "en";
+  }
+
+  return /[\u0900-\u097F]/.test(text) ? "hi" : "en";
+}
+
+function getRecognitionLanguage(mode: UserSettings["preferences"]["voiceLanguage"]) {
+  if (mode === "hi") {
+    return "hi-IN";
+  }
+
+  if (mode === "en") {
+    return "en-US";
+  }
+
+  return "en-IN";
+}
+
+function pickBestVoice(input: {
+  voices: SpeechSynthesisVoice[];
+  language: "en" | "hi";
+  gender: UserSettings["preferences"]["voiceGender"];
+}) {
+  const langPref =
+    input.language === "hi"
+      ? ["hi-in", "hi"]
+      : ["en-in", "en-us", "en-gb", "en"];
+
+  let winner: SpeechSynthesisVoice | null = null;
+  let winnerScore = Number.NEGATIVE_INFINITY;
+
+  for (const voice of input.voices) {
+    const lang = (voice.lang || "").toLowerCase();
+    const name = (voice.name || "").toLowerCase();
+
+    const langIndex = langPref.findIndex(
+      (tag) => lang.startsWith(tag) || lang.includes(tag),
+    );
+    if (langIndex === -1) {
+      continue;
+    }
+
+    let score = 100 - langIndex * 10;
+
+    if (input.gender !== "auto") {
+      const femaleHit = FEMALE_VOICE_HINTS.some((hint) => name.includes(hint));
+      const maleHit = MALE_VOICE_HINTS.some((hint) => name.includes(hint));
+
+      if (input.gender === "female") {
+        if (femaleHit) score += 18;
+        if (maleHit) score -= 8;
+      }
+
+      if (input.gender === "male") {
+        if (maleHit) score += 18;
+        if (femaleHit) score -= 8;
+      }
+    }
+
+    if (/google|microsoft|neural|enhanced|premium/.test(name)) {
+      score += 4;
+    }
+    if (voice.localService) {
+      score += 2;
+    }
+    if (voice.default) {
+      score += 1;
+    }
+
+    if (score > winnerScore) {
+      winner = voice;
+      winnerScore = score;
+    }
+  }
+
+  return winner;
 }
 
 export function JarvisConsole() {
@@ -162,6 +308,10 @@ export function JarvisConsole() {
   const [soundEffectsEnabled, setSoundEffectsEnabled] = useState(true);
   const [isListening, setIsListening] = useState(false);
   const [voiceDraft, setVoiceDraft] = useState("");
+  const [availableVoices, setAvailableVoices] = useState<SpeechSynthesisVoice[]>(
+    [],
+  );
+  const [activeVoiceLabel, setActiveVoiceLabel] = useState("System default");
 
   const [editingMemoryId, setEditingMemoryId] = useState<string | null>(null);
   const [editingMemoryText, setEditingMemoryText] = useState("");
@@ -187,7 +337,7 @@ export function JarvisConsole() {
 
       if (settingsRes.ok) {
         const data = (await settingsRes.json()) as { settings: UserSettings };
-        setSettings(data.settings);
+        setSettings(normalizeSettings(data.settings));
       }
 
       if (memoryRes.ok) {
@@ -258,6 +408,41 @@ export function JarvisConsole() {
   useEffect(() => {
     setIsClient(true);
   }, []);
+
+  useEffect(() => {
+    if (!isClient || !window.speechSynthesis) {
+      return;
+    }
+
+    const synth = window.speechSynthesis;
+    const loadVoices = () => {
+      const voices = synth.getVoices();
+      setAvailableVoices(voices);
+    };
+
+    loadVoices();
+    const timer = window.setTimeout(loadVoices, 300);
+    synth.addEventListener("voiceschanged", loadVoices);
+
+    return () => {
+      window.clearTimeout(timer);
+      synth.removeEventListener("voiceschanged", loadVoices);
+    };
+  }, [isClient]);
+
+  useEffect(() => {
+    const previewLanguage = settings.preferences.voiceLanguage === "hi" ? "hi" : "en";
+    const preview = pickBestVoice({
+      voices: availableVoices,
+      language: previewLanguage,
+      gender: settings.preferences.voiceGender,
+    });
+    setActiveVoiceLabel(preview?.name ?? "System default");
+  }, [
+    availableVoices,
+    settings.preferences.voiceGender,
+    settings.preferences.voiceLanguage,
+  ]);
 
   useEffect(() => {
     if (!isClient) {
@@ -416,13 +601,50 @@ export function JarvisConsole() {
         return;
       }
 
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(text.slice(0, 520));
-      utterance.rate = 1.03;
-      utterance.pitch = 1.02;
-      window.speechSynthesis.speak(utterance);
+      const finalText = text.slice(0, 520).trim();
+      const language = getVoiceOutputLanguage(
+        finalText,
+        settings.preferences.voiceLanguage,
+      );
+
+      const synth = window.speechSynthesis;
+      synth.cancel();
+
+      const utterance = new SpeechSynthesisUtterance(finalText);
+      utterance.lang = language === "hi" ? "hi-IN" : "en-US";
+
+      const matchedVoice = pickBestVoice({
+        voices: availableVoices,
+        language,
+        gender: settings.preferences.voiceGender,
+      });
+
+      if (matchedVoice) {
+        utterance.voice = matchedVoice;
+        if (matchedVoice.lang) {
+          utterance.lang = matchedVoice.lang;
+        }
+        setActiveVoiceLabel(matchedVoice.name);
+      } else {
+        setActiveVoiceLabel("System default");
+      }
+
+      if (language === "hi") {
+        utterance.rate = 0.95;
+        utterance.pitch = 1;
+      } else {
+        utterance.rate = 1.03;
+        utterance.pitch = 1.02;
+      }
+
+      synth.speak(utterance);
     },
-    [voiceOutput],
+    [
+      availableVoices,
+      settings.preferences.voiceGender,
+      settings.preferences.voiceLanguage,
+      voiceOutput,
+    ],
   );
 
   const patchSettings = useCallback(
@@ -440,7 +662,7 @@ export function JarvisConsole() {
 
       if (response.ok) {
         const data = (await response.json()) as { settings: UserSettings };
-        setSettings(data.settings);
+        setSettings(normalizeSettings(data.settings));
       }
     },
     [userId],
@@ -633,7 +855,7 @@ export function JarvisConsole() {
 
     const recognition = new Ctor();
     recognitionRef.current = recognition;
-    recognition.lang = "en-US";
+    recognition.lang = getRecognitionLanguage(settings.preferences.voiceLanguage);
     recognition.interimResults = true;
     recognition.maxAlternatives = 1;
 
@@ -697,7 +919,12 @@ export function JarvisConsole() {
     };
 
     recognition.start();
-  }, [isListening, playSfx, settings.preferences.wakeWordEnabled]);
+  }, [
+    isListening,
+    playSfx,
+    settings.preferences.voiceLanguage,
+    settings.preferences.wakeWordEnabled,
+  ]);
 
   const uploadFiles = useCallback(async (files: FileList | null) => {
     if (!files?.length) {
@@ -1036,6 +1263,65 @@ export function JarvisConsole() {
               >
                 {soundEffectsEnabled ? <Volume2 size={14} /> : <VolumeX size={14} />} SFX
               </button>
+            </div>
+
+            <div className="space-y-1">
+              <div className="panel-label">Voice Language</div>
+              <select
+                value={settings.preferences.voiceLanguage}
+                onChange={(event) => {
+                  const voiceLanguage = event.target
+                    .value as UserSettings["preferences"]["voiceLanguage"];
+                  setSettings((prev) => ({
+                    ...prev,
+                    preferences: {
+                      ...prev.preferences,
+                      voiceLanguage,
+                    },
+                  }));
+                  void patchSettings({ preferences: { voiceLanguage } });
+                }}
+                className="hud-input"
+              >
+                {VOICE_LANGUAGE_OPTIONS.map((mode) => (
+                  <option key={mode} value={mode}>
+                    {mode === "bilingual"
+                      ? "English + Hindi"
+                      : mode === "en"
+                        ? "English"
+                        : "Hindi"}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="space-y-1">
+              <div className="panel-label">Voice Gender</div>
+              <select
+                value={settings.preferences.voiceGender}
+                onChange={(event) => {
+                  const voiceGender = event.target
+                    .value as UserSettings["preferences"]["voiceGender"];
+                  setSettings((prev) => ({
+                    ...prev,
+                    preferences: {
+                      ...prev.preferences,
+                      voiceGender,
+                    },
+                  }));
+                  void patchSettings({ preferences: { voiceGender } });
+                }}
+                className="hud-input"
+              >
+                {VOICE_GENDER_OPTIONS.map((voiceGender) => (
+                  <option key={voiceGender} value={voiceGender}>
+                    {voiceGender === "auto" ? "Auto" : formatModeLabel(voiceGender)}
+                  </option>
+                ))}
+              </select>
+              <div className="text-[10px] text-slate-300/70">
+                Active voice: {activeVoiceLabel}
+              </div>
             </div>
 
             <div className="space-y-2">
