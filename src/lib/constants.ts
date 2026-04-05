@@ -46,4 +46,6 @@ export const MEMORY_KINDS: MemoryKind[] = [
 export const STORAGE_KEYS = {
   userId: "jarvis.userId",
   soundEffects: "jarvis.soundEffects",
+  voiceGender: "jarvis.voiceGender",
+  voiceLanguage: "jarvis.voiceLanguage",
 } as const;

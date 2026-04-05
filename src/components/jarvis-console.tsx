@@ -370,6 +370,28 @@ export function JarvisConsole() {
     if (storedSoundMode === "off") {
       setSoundEffectsEnabled(false);
     }
+
+    const storedVoiceGender = window.localStorage.getItem(STORAGE_KEYS.voiceGender);
+    const storedVoiceLanguage = window.localStorage.getItem(STORAGE_KEYS.voiceLanguage);
+
+    setSettings((prev) => ({
+      ...prev,
+      preferences: {
+        ...prev.preferences,
+        voiceGender:
+          storedVoiceGender === "female" ||
+          storedVoiceGender === "male" ||
+          storedVoiceGender === "auto"
+            ? storedVoiceGender
+            : prev.preferences.voiceGender,
+        voiceLanguage:
+          storedVoiceLanguage === "en" ||
+          storedVoiceLanguage === "hi" ||
+          storedVoiceLanguage === "bilingual"
+            ? storedVoiceLanguage
+            : prev.preferences.voiceLanguage,
+      },
+    }));
   }, []);
 
   useEffect(() => {
@@ -454,6 +476,25 @@ export function JarvisConsole() {
       soundEffectsEnabled ? "on" : "off",
     );
   }, [isClient, soundEffectsEnabled]);
+
+  useEffect(() => {
+    if (!isClient) {
+      return;
+    }
+
+    window.localStorage.setItem(
+      STORAGE_KEYS.voiceGender,
+      settings.preferences.voiceGender,
+    );
+    window.localStorage.setItem(
+      STORAGE_KEYS.voiceLanguage,
+      settings.preferences.voiceLanguage,
+    );
+  }, [
+    isClient,
+    settings.preferences.voiceGender,
+    settings.preferences.voiceLanguage,
+  ]);
 
   useEffect(() => {
     const timer = setInterval(() => {
