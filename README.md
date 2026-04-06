@@ -1,6 +1,6 @@
 # JARVIS 2.0
 
-A cinematic, futuristic AI command system built with Next.js, Tailwind CSS, Framer Motion, OpenAI, and MongoDB.
+ futuristic AI command system built with Next.js, Tailwind CSS, Framer Motion, OpenAI, and MongoDB.
 
 It is designed to feel like a personal AI operating system, not a basic chatbot.
 
