@@ -18,7 +18,7 @@ It is designed to feel like a personal AI operating system, not a basic chatbot.
   - Short-term conversational context
   - Long-term memory in MongoDB
   - Optional semantic memory (embeddings)
-- Command mode:
+- --Command mode::
   - `/remember <text>`
   - `/forget <text>`
   - `/update <field>: <value>`
