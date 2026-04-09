@@ -1,4 +1,4 @@
-# JARVIS 2.0
+🀄️ JARVIS 2.0
 
  futuristic AI command system built with Next.js, Tailwind CSS, Framer Motion, OpenAI, and MongoDB.
 
