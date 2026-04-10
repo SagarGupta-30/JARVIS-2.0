@@ -4,7 +4,7 @@
 
 It is designed to feel like a personal AI operating system, not a basic chatbot.
 
-## Core Features
+### Core Features
 
 - Real-time streaming chat responses
 - Multi-turn conversation memory
