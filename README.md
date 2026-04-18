@@ -6,7 +6,7 @@
 
 ### Core Features
 
-- Real-time streaming chat responses
+- Real-time streaming chat responses.
 - Multi-turn conversation memory
 - Voice input (Speech-to-Text) + voice output (Text-to-Speech)
 - Optional wake word mode: `Hey JARVIS`
